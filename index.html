@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Juego tipo Doom – Cruz Cristiana</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script>
+    // ─── CONFIGURACIÓN DEL CANVAS ─────────────────────────────
+    const canvas = document.getElementById('gameCanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    // ─── CARGA DE TEXTURAS ─────────────────────────────
+    // Cambia las rutas por las de tus imágenes
+    const wallTexture = new Image();
+    wallTexture.src = 'wall.png';
+    const floorTexture = new Image();
+    floorTexture.src = 'floor.png';
+    const ceilingTexture = new Image();
+    ceilingTexture.src = 'ceiling.png';
+
+    // ─── DEFINICIÓN DEL MAPA (15x15) ─────────────────────────────
+    // Creamos un mapa con borde de muros (valor 1) y “cavamos” el área abierta (valor 0)
+    // para formar una cruz latina:
+    //   - La barra horizontal se extiende en las filas 1 a 4, columnas 3 a 11.
+    //   - La barra vertical (el “pecho”) se extiende en las filas 4 a 13, columnas 6 a 8.
+    const MAP_WIDTH = 15, MAP_HEIGHT = 15;
+    const map = [];
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      const row = [];
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        row.push(1); // 1 = muro
+      }
+      map.push(row);
+    }
+    // Barra horizontal de la cruz (parte superior)
+    for (let y = 1; y <= 4; y++) {
+      for (let x = 3; x <= 11; x++) {
+        map[y][x] = 0;
+      }
+    }
+    // Barra vertical (tronco de la cruz)
+    for (let y = 4; y <= 13; y++) {
+      for (let x = 6; x <= 8; x++) {
+        map[y][x] = 0;
+      }
+    }
+
+    // ─── VARIABLES DEL JUGADOR ─────────────────────────────
+    // Posición (en coordenadas del mapa) y ángulo (en radianes)
+    let posX = 7.5, posY = 3.5; // Debe iniciar dentro del área abierta de la cruz
+    let angle = 0;             // Dirección inicial
+    const fov = Math.PI / 3;   // Campo de visión: 60°
+
+    // ─── CONTROLES (WASD y flechas) ─────────────────────────────
+    const moveSpeed = 0.05;
+    const rotSpeed = 0.03;
+    const keys = {};
+    window.addEventListener('keydown', e => { keys[e.key] = true; });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function update() {
+      // Avanzar
+      if (keys["ArrowUp"] || keys["w"]) {
+        let newX = posX + Math.cos(angle) * moveSpeed;
+        let newY = posY + Math.sin(angle) * moveSpeed;
+        if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+          posX = newX;
+          posY = newY;
+        }
+      }
+      // Retroceder
+      if (keys["ArrowDown"] || keys["s"]) {
+        let newX = posX - Math.cos(angle) * moveSpeed;
+        let newY = posY - Math.sin(angle) * moveSpeed;
+        if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+          posX = newX;
+          posY = newY;
+        }
+      }
+      // Rotar a la izquierda
+      if (keys["ArrowLeft"] || keys["a"]) {
+        angle -= rotSpeed;
+      }
+      // Rotar a la derecha
+      if (keys["ArrowRight"] || keys["d"]) {
+        angle += rotSpeed;
+      }
+    }
+
+    // ─── RENDERIZADO ─────────────────────────────
+    function render() {
+      // Limpiar la pantalla
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Dibuja techo y suelo (sin proyección en perspectiva, usando patrones)
+      if (ceilingTexture.complete) {
+        const ceilingPattern = ctx.createPattern(ceilingTexture, 'repeat');
+        ctx.fillStyle = ceilingPattern;
+        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+      } else {
+        ctx.fillStyle = '#777';
+        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+      }
+      if (floorTexture.complete) {
+        const floorPattern = ctx.createPattern(floorTexture, 'repeat');
+        ctx.fillStyle = floorPattern;
+        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+      } else {
+        ctx.fillStyle = '#444';
+        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+      }
+
+      // Calcula el plano de cámara (para obtener el FOV)
+      const planeX = -Math.sin(angle) * Math.tan(fov / 2);
+      const planeY =  Math.cos(angle) * Math.tan(fov / 2);
+
+      // Para cada columna de píxeles se traza un rayo
+      for (let x = 0; x < canvas.width; x++) {
+        // Coordenada de cámara en el rango [-1, 1]
+        const cameraX = 2 * x / canvas.width - 1;
+        // Dirección del rayo (suma de la dirección y una parte proporcional al plano de cámara)
+        const rayDirX = Math.cos(angle) + planeX * cameraX;
+        const rayDirY = Math.sin(angle) + planeY * cameraX;
+
+        // Celda actual del mapa
+        let mapX = Math.floor(posX);
+        let mapY = Math.floor(posY);
+
+        // Distancias hasta el siguiente lado en X o Y
+        const deltaDistX = Math.abs(1 / rayDirX);
+        const deltaDistY = Math.abs(1 / rayDirY);
+        let sideDistX, sideDistY;
+
+        // Determina el paso y la distancia inicial a la primera intersección
+        let stepX, stepY;
+        if (rayDirX < 0) {
+          stepX = -1;
+          sideDistX = (posX - mapX) * deltaDistX;
+        } else {
+          stepX = 1;
+          sideDistX = (mapX + 1.0 - posX) * deltaDistX;
+        }
+        if (rayDirY < 0) {
+          stepY = -1;
+          sideDistY = (posY - mapY) * deltaDistY;
+        } else {
+          stepY = 1;
+          sideDistY = (mapY + 1.0 - posY) * deltaDistY;
+        }
+
+        // Bucle DDA: avanza celda a celda hasta encontrar un muro (valor > 0)
+        let hit = 0;
+        let side; // 0 = impacto en eje X, 1 = impacto en eje Y
+        while (hit === 0) {
+          if (sideDistX < sideDistY) {
+            sideDistX += deltaDistX;
+            mapX += stepX;
+            side = 0;
+          } else {
+            sideDistY += deltaDistY;
+            mapY += stepY;
+            side = 1;
+          }
+          if (map[mapY][mapX] > 0) hit = 1;
+        }
+
+        // Calcula la distancia corregida (perpendicular) al muro
+        let perpWallDist;
+        if (side === 0) {
+          perpWallDist = (mapX - posX + (1 - stepX) / 2) / rayDirX;
+        } else {
+          perpWallDist = (mapY - posY + (1 - stepY) / 2) / rayDirY;
+        }
+
+        // Calcula la altura de la línea a dibujar en pantalla
+        const lineHeight = Math.floor(canvas.height / perpWallDist);
+
+        // Calcula los píxeles de inicio y fin de la línea
+        let drawStart = -lineHeight / 2 + canvas.height / 2;
+        if (drawStart < 0) drawStart = 0;
+        let drawEnd = lineHeight / 2 + canvas.height / 2;
+        if (drawEnd >= canvas.height) drawEnd = canvas.height - 1;
+
+        // Cálculo de la posición exacta donde se impactó la pared (para texturizado)
+        let wallX;
+        if (side === 0)
+          wallX = posY + perpWallDist * rayDirY;
+        else
+          wallX = posX + perpWallDist * rayDirX;
+        wallX -= Math.floor(wallX);
+
+        // Coordenada X en la textura
+        let texX = Math.floor(wallX * wallTexture.width);
+        if (side === 0 && rayDirX > 0) texX = wallTexture.width - texX - 1;
+        if (side === 1 && rayDirY < 0) texX = wallTexture.width - texX - 1;
+
+        // Dibuja la columna de la pared usando la columna correspondiente de la textura
+        if (wallTexture.complete) {
+          ctx.drawImage(
+            wallTexture,
+            texX, 0, 1, wallTexture.height,  // Fuente: columna de 1 píxel de ancho
+            x, drawStart, 1, drawEnd - drawStart  // Destino: columna en pantalla escalada
+          );
+        } else {
+          // Si la textura no está cargada, se dibuja una línea de color simple
+          ctx.fillStyle = (side === 1) ? '#888' : '#aaa';
+          ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+        }
+      }
+    }
+
+    // ─── BUCLE DEL JUEGO ─────────────────────────────
+    function gameLoop() {
+      update();
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Inicia el juego (se puede esperar a que se hayan cargado las texturas)
+    window.onload = () => {
+      gameLoop();
+    };
+  </script>
+</body>
+</html>
