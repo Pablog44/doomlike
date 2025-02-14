@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Juego tipo Doom</title>
+  <title>Juego tipo Doom con Three.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
@@ -11,24 +12,25 @@
       background: #000;
       overflow: hidden;
     }
-    /* El canvas del juego se centrará horizontalmente y usará el 85% de la altura */
+    /* El canvas del juego se centrará y usará el 85% de la altura */
     #gameCanvas {
       display: block;
       margin: 0 auto;
       background: #000;
     }
   </style>
+
+  <!-- 1. Carga la librería Three.js (UMD) para que defina THREE como global -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-
-  <!-- Script principal del juego -->
+  
+  <!-- 2. Script principal del juego (usa THREE como global) -->
   <script>
-    // ─── CONFIGURACIÓN DEL CANVAS ─────────────────────────────
-    // Se usa el 85% de la altura para el juego (el footer ocupará el 15% restante)
+    /***** CONFIGURACIÓN DEL CANVAS Y VARIABLES GLOBALES *****/
     const canvas = document.getElementById('gameCanvas');
     const availableHeight = window.innerHeight * 0.85;
-    // Para que el juego sea casi cuadrado se usa el mínimo entre ancho y 85% de alto
     const canvasSize = Math.min(window.innerWidth, availableHeight);
     canvas.width = canvasSize;
     canvas.height = canvasSize;
@@ -36,7 +38,7 @@
     const screenWidth = canvas.width;
     const screenHeight = canvas.height;
 
-    // ─── FUNCIONES DE AYUDA ─────────────────────────────
+    // ─── FUNCIONES DE AYUDA ───
     function loadTexture(src) {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -44,14 +46,14 @@
       return img;
     }
 
-    // ─── CARGA DE TEXTURAS ─────────────────────────────
+    // ─── CARGA DE TEXTURAS ───
     const wallTexture    = loadTexture('wall.png');
     const floorTexture   = loadTexture('floor.png');
     const ceilingTexture = loadTexture('ceiling.png');
     const weaponTexture  = loadTexture('weapon.png');
     const enemyTexture   = loadTexture('enemy.png');
 
-    // Variables para extraer los píxeles de piso y techo
+    // Variables para extraer píxeles de piso y techo (para el raycasting)
     let floorData = null, ceilingData = null;
     let texturesLoaded = 0;
     function onTextureLoaded() {
@@ -80,7 +82,7 @@
     weaponTexture.onload  = onTextureLoaded;
     enemyTexture.onload   = onTextureLoaded;
 
-    // ─── DEFINICIÓN DEL MAPA (15x15) ─────────────────────────────
+    // ─── DEFINICIÓN DEL MAPA (15x15) ───
     const MAP_WIDTH = 15, MAP_HEIGHT = 15;
     const map = [];
     for (let y = 0; y < MAP_HEIGHT; y++) {
@@ -103,17 +105,17 @@
       }
     }
 
-    // ─── VARIABLES DEL JUGADOR ─────────────────────────────
-    let posX = 7.5, posY = 3.5;  // Posición inicial
-    let angle = 0;             // Ángulo en radianes
+    // ─── VARIABLES DEL JUGADOR ───
+    let posX = 7.5, posY = 3.5;  // Posición inicial (dentro del mapa)
+    let angle = 0;             // Ángulo en radianes (0 → mirando hacia -Z en nuestro sistema)
     const fov = Math.PI / 3;   // Campo de visión (60°)
 
     // Velocidades
     const moveSpeed = 0.2;
     const rotSpeed  = 0.2;
 
-    // ─── CONTROLES ─────────────────────────────
-    // Se exponen en window para que el script del minimapa pueda acceder a ellos
+    // ─── CONTROLES ───
+    // Exponemos el objeto de controles para el minimapa
     const keys = {};
     window.keys = keys;
     window.addEventListener('keydown', e => {
@@ -124,13 +126,12 @@
     });
     window.addEventListener('keyup', e => { keys[e.key] = false; });
 
-    // ─── SISTEMA DE DISPAROS ─────────────────────────────
+    // ─── SISTEMA DE DISPAROS ───
     const bullets = [];
     const bulletSpeed = 0.5;
     let lastShotTime = 0;
     const shootCooldown = 300; // milisegundos
 
-    // Función para disparar (usada tanto por teclado como por controles táctiles)
     function shootBullet() {
       const currentTime = Date.now();
       if (currentTime - lastShotTime > shootCooldown) {
@@ -139,7 +140,7 @@
       }
     }
 
-    // ─── ENEMIGOS ─────────────────────────────
+    // ─── ENEMIGOS ───
     const enemies = [
       { x: 5.5,  y: 2.5,  alive: true },
       { x: 7.5,  y: 10.5, alive: true },
@@ -147,8 +148,10 @@
     ];
     const enemySpeed = 0.02;
 
-    // ─── ACTUALIZACIÓN DEL ESTADO ─────────────────────────────
+    // Actualización del estado: Movimiento y lógica
     function update() {
+      // Usamos el mismo vector forward que en el código que funciona:
+      // forwardX = cos(angle), forwardY = sin(angle)
       if (keys["ArrowUp"] || keys["w"]) {
         let newX = posX + Math.cos(angle) * moveSpeed;
         let newY = posY + Math.sin(angle) * moveSpeed;
@@ -171,9 +174,15 @@
       if (keys["ArrowRight"] || keys["d"]) {
         angle += rotSpeed;
       }
-      // Actualiza los proyectiles
+      
+      // Actualizamos las posiciones globales para el minimapa
+      window.posX = posX;
+      window.posY = posY;
+
+      // Actualizamos los proyectiles
       for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
+        // Usamos la misma fórmula que para el movimiento del jugador
         b.x += Math.cos(b.angle) * bulletSpeed;
         b.y += Math.sin(b.angle) * bulletSpeed;
         if (!map[Math.floor(b.y)] || map[Math.floor(b.y)][Math.floor(b.x)] > 0) {
@@ -192,7 +201,7 @@
           }
         }
       }
-      // Movimiento simple de enemigos
+      // Movimiento simple de enemigos (persiguiendo al jugador)
       for (let enemy of enemies) {
         if (enemy.alive) {
           let dx = posX - enemy.x;
@@ -208,12 +217,11 @@
           }
         }
       }
-      // Actualizamos las posiciones globales para el minimapa
-      window.posX = posX;
-      window.posY = posY;
+      // Exponemos un valor de vida para el minimapa (valor fijo de ejemplo)
+      window.playerLife = 100;
     }
 
-    // ─── RENDERIZADO ─────────────────────────────
+    // ─── RENDERIZADO (raycasting 2D) ───
     function render() {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, screenWidth, screenHeight);
@@ -385,7 +393,7 @@
           const drawStartX = Math.floor(-spriteSize / 2 + spriteScreenX);
           ctx.fillStyle = "yellow";
           ctx.beginPath();
-          ctx.arc(drawStartX + spriteSize / 2, drawStartY + spriteSize / 2, spriteSize / 2, 0, 2 * Math.PI);
+          ctx.arc(drawStartX + spriteSize/2, drawStartY + spriteSize/2, spriteSize/2, 0, 2 * Math.PI);
           ctx.fill();
         }
       }
@@ -398,7 +406,7 @@
       ctx.drawImage(weaponTexture, weaponX, weaponY, weaponWidth, weaponHeight);
     }
 
-    // ─── BUCLE DEL JUEGO ─────────────────────────────
+    // ─── BUCLE DEL JUEGO ───
     function gameLoop() {
       update();
       render();
@@ -406,7 +414,7 @@
     }
   </script>
 
-  <!-- Se carga el script externo para el minimapa y controles móviles -->
+  <!-- 3. Script externo para el minimapa y controles móviles -->
   <script src="minimap.js"></script>
 </body>
 </html>
