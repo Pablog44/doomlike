@@ -121,13 +121,13 @@ function generateFifthMap() {
     }
     mapArray.push(row);
   }
-  // Vaciar zona central
+
   for (let y = 2; y <= 13; y++) {
     for (let x = 2; x < 5; x++) {
       mapArray[y][x] = 0;
     }
   }
-  // Abrir zona inferior
+
   for (let y = 11; y <= 13; y++) {
     for (let x = 5; x <= 13; x++) {
       mapArray[y][x] = 0;
@@ -138,6 +138,80 @@ function generateFifthMap() {
       mapArray[y][x] = 0;
     }
   }
+  return mapArray;
+}
+
+/**
+ * Función para generar el sexto mapa.
+ * En este ejemplo, se crea un gran espacio central, rodeado por muros en el borde
+ * y con una cruz de muros en el centro.
+ */
+function generateSixthMap() {
+  const MAP_WIDTH = 15, MAP_HEIGHT = 15;
+  const mapArray = [];
+
+  // Inicializar todo con paredes
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    const row = [];
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      row.push(1);
+    }
+    mapArray.push(row);
+  }
+
+  for (let y = 1; y <= 4; y++) {
+    for (let x = 1; x < 5; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+
+  for (let y = 2; y < 3; y++) {
+    for (let x = 5; x <= 10; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+    for (let y = 4; y <= 10; y++) {
+        for (let x = 2; x < 3; x++) {
+            mapArray[y][x] = 0;
+        }
+    }
+  for (let y = 1; y <= 4; y++) {
+    for (let x = 10; x < 14; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+  for (let y = 4; y <= 10; y++) {
+    for (let x = 11; x < 12; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+  for (let y = 10; y < 14; y++) {
+    for (let x = 1; x < 5; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+  for (let y = 10; y < 14; y++) {
+    for (let x = 10; x < 14; x++) {
+      mapArray[y][x] = 0;
+    }
+  }
+    for (let y = 12; y < 13; y++) {
+        for (let x = 5; x <= 7; x++) {
+            mapArray[y][x] = 0;
+        }
+    }
+    for (let y = 9; y < 12; y++) {
+        for (let x = 7; x < 8; x++) {
+            mapArray[y][x] = 0;
+        }
+    }
+    for (let y = 6; y < 9; y++) {
+        for (let x = 6; x < 9; x++) {
+            mapArray[y][x] = 0;
+        }
+    }
+
+
   return mapArray;
 }
 
@@ -196,14 +270,31 @@ const allMaps = [
   {
     layout: generateFifthMap,
     enemies: [
-      { x: 10.5,  y: 10.5, alive: true },
-      { x: 4.5,  y: 6.5, alive: true },
-      { x: 3.5, y: 7.5, alive: true },
-      { x: 3.5,  y: 3.5, alive: true }
+      { x: 10.5, y: 10.5, alive: true },
+      { x: 4.5,  y: 6.5,  alive: true },
+      { x: 3.5,  y: 7.5,  alive: true },
+      { x: 3.5,  y: 3.5,  alive: true }
     ],
     playerStart: {
       x: 9.5,
       y: 9.5,
+      angle: 0
+    }
+  },
+  // Mapa 6: el nuevo mapa
+  {
+    layout: generateSixthMap,
+    enemies: [
+      { x: 2.5,  y: 2.5,   alive: true },
+      { x: 12.5, y: 2.5,   alive: true },
+      { x: 2.5, y: 12.5, alive: true },
+      { x: 6.5, y: 6.5, alive: true },
+      { x: 7.5, y: 7.5, alive: true },
+      { x: 12.5, y: 12.5,  alive: true }
+    ],
+    playerStart: {
+      x: 11.5,
+      y: 11.5,
       angle: 0
     }
   }
