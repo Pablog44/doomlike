@@ -209,6 +209,7 @@ function update() {
   // Actualizamos las posiciones en window (para el minimapa)
   window.posX = posX;
   window.posY = posY;
+  window.angle = angle;
 
   // ─── ACTUALIZACIÓN DE LOS PROYECTILES DEL JUGADOR ───
   for (let i = bullets.length - 1; i >= 0; i--) {
