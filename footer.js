@@ -123,10 +123,13 @@ document.addEventListener("DOMContentLoaded", function () {
       window.keys[key] = false;
     });
   }
-  addButtonEvents(btnUp,    "ArrowUp");
-  addButtonEvents(btnLeft,  "ArrowLeft");
-  addButtonEvents(btnDown,  "ArrowDown");
-  addButtonEvents(btnRight, "ArrowRight");
+  // La cruceta imita el left stick del gamepad:
+  // Vertical: arriba = "w", abajo = "s"
+  // Horizontal: izquierda y derecha se mantienen "ArrowLeft" y "ArrowRight"
+  addButtonEvents(btnUp,    "w");
+  addButtonEvents(btnLeft,  "q");
+  addButtonEvents(btnDown,  "s");
+  addButtonEvents(btnRight, "e");
 
   // Disparo al pulsar el botón
   shootBtn.addEventListener("touchstart", function(e) {
@@ -140,15 +143,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // ─── BOTONES DE GIRO (SOLO EN VISTA MÓVIL) ───
   // Se crean dos botones, uno para girar a la izquierda y otro para girar a la derecha,
-  // posicionados en cada extremo, justo encima del footer.
+  // posicionados en la parte superior del footer.
   const rotateContainer = document.createElement("div");
   rotateContainer.id = "rotateContainer";
   rotateContainer.style.position = "fixed";
-  rotateContainer.style.bottom = "15vh"; // Encima del footer
+  rotateContainer.style.bottom = "calc(15vh + 20px)"; // Encima del footer y 20px más arriba
   rotateContainer.style.left = "0";
   rotateContainer.style.width = "100%";
   rotateContainer.style.display = "none"; // Se mostrará solo en vista móvil mediante media query
-  rotateContainer.style.justifyContent = "space-between";
+  rotateContainer.style.justifyContent = "flex-end"; // Alineados a la derecha
+  rotateContainer.style.gap = "30px"; // Espacio de 30px entre ellos
   rotateContainer.style.padding = "0 10px";
   rotateContainer.style.boxSizing = "border-box";
 
@@ -184,8 +188,9 @@ document.addEventListener("DOMContentLoaded", function () {
       window.keys[key] = false;
     });
   }
-  addRotateButtonEvents(btnRotateLeft, "rotateLeft");
-  addRotateButtonEvents(btnRotateRight, "rotateRight");
+  // Los nuevos botones de giro ahora hacen lo mismo que los botones izquierda y derecha de la cruceta
+  addRotateButtonEvents(btnRotateLeft, "ArrowLeft");
+  addRotateButtonEvents(btnRotateRight, "ArrowRight");
 
   // ─── MEDIA QUERY PARA VISTA MÓVIL ───
   const styleEl = document.createElement("style");
