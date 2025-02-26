@@ -125,10 +125,18 @@ function lockChangeAlert() {
 }
 
 function updateMouseMovement(e) {
-    const mouseSensitivity = 0.002; // Ajusta la sensibilidad según convenga
-    // Actualiza la rotación de forma directa (sustrayendo para que se sienta natural)
-    angle -= e.movementX * mouseSensitivity;
+    const mouseSensitivity = 0.001; // Ajusta la sensibilidad según convenga
+    // Se invierte la dirección: si mueves el ratón a la izquierda, se rota a la izquierda
+    angle += e.movementX * mouseSensitivity;
 }
+
+// ─── DISPARO CON RATÓN ───
+// Al hacer clic izquierdo se dispara
+canvas.addEventListener('mousedown', function(e) {
+    if (e.button === 0) { // Botón izquierdo
+        shootBullet();
+    }
+});
 
 // ─── CONTROLES CON TECLADO ───
 window.keys = {}; // Objeto global para almacenar pulsaciones
@@ -214,7 +222,7 @@ function update() {
   }
 
   // Movimiento lateral (strafe) con "q" (izquierda) y "e" (derecha)
-  if (window.keys["q"]) {
+  if (window.keys["a"]) {
     const newX = posX + Math.cos(angle - Math.PI / 2) * moveSpeed;
     const newY = posY + Math.sin(angle - Math.PI / 2) * moveSpeed;
     if (window.map[Math.floor(newY)][Math.floor(newX)] === 0) {
@@ -222,7 +230,7 @@ function update() {
       posY = newY;
     }
   }
-  if (window.keys["e"]) {
+  if (window.keys["d"]) {
     const newX = posX + Math.cos(angle + Math.PI / 2) * moveSpeed;
     const newY = posY + Math.sin(angle + Math.PI / 2) * moveSpeed;
     if (window.map[Math.floor(newY)][Math.floor(newX)] === 0) {
@@ -234,14 +242,14 @@ function update() {
   // ─── ROTACIÓN ───
   // Si no se usa la rotación con ratón (pointer lock activo), se usa la aceleración por teclado
   if (!useMouseRotation) {
-    if (window.keys["ArrowLeft"] || window.keys["a"]) {
+    if (window.keys["ArrowLeft"] || window.keys["q"]) {
       rotateLeftTime++;
       const factor = Math.min(1, rotateLeftTime / accelFrames);
       angle -= (minRotSpeed + factor * (rotSpeed - minRotSpeed));
     } else {
       rotateLeftTime = 0;
     }
-    if (window.keys["ArrowRight"] || window.keys["d"]) {
+    if (window.keys["ArrowRight"] || window.keys["e"]) {
       rotateRightTime++;
       const factor = Math.min(1, rotateRightTime / accelFrames);
       angle += (minRotSpeed + factor * (rotSpeed - minRotSpeed));
@@ -256,7 +264,7 @@ function update() {
     let axisRotation = gp.axes[2]; // Asumimos que el stick derecho horizontal está en el eje 2
     const threshold = 0.1;
     if (Math.abs(axisRotation) > threshold) {
-      const gamepadSensitivity = 0.05; // Ajusta según convenga
+      const gamepadSensitivity = 0.15; // Ajusta según convenga
       angle += axisRotation * gamepadSensitivity;
     }
   }

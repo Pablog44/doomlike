@@ -52,15 +52,15 @@
             // --- Movimiento lateral (strafe) ---
             // LB para strafe izquierda (índice 4) mapeado a "q"
             if (gp.axes[0] < -axisThreshold) {
-                window.keys["q"] = true;
+                window.keys["a"] = true;
             } else {
-                window.keys["q"] = false;
+                window.keys["a"] = false;
             }
             // RB para strafe derecha (índice 5) mapeado a "e"
             if (gp.axes[0] > axisThreshold) {
-                window.keys["e"] = true;
+                window.keys["d"] = true;
             } else {
-                window.keys["e"] = false;
+                window.keys["d"] = false;
             }
         }
 
