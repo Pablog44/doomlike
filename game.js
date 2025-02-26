@@ -10,6 +10,9 @@ const ctx = canvas.getContext('2d');
 const screenWidth = canvas.width;
 const screenHeight = canvas.height;
 
+const gameOveSound = new Audio('gameOve.mp3');
+gameOveSound.volume = 0.3;
+
 // VARIABLES GLOBALES DEL JUEGO
 let playerLife = 100;            // Vida del jugador
 let enemyBullets = [];           // Proyectiles de los enemigos
@@ -197,9 +200,63 @@ window.shootBullet = shootBullet;
 function update() {
   // Si la vida llega a 0, se considera Game Over
   if (playerLife <= 0) {
-    alert("¡Game Over!");
-    window.initMap(0);
-    playerLife = 100;
+    // Evitar crear múltiples overlays si ya existe uno
+    if (document.getElementById('game-over-overlay')) return;
+    
+    // Detener el sonido de inicio del mapa
+    if (typeof mapStartSound !== 'undefined') {
+      mapStartSound.pause();
+    }
+    // Reproducir sonido de Game Over
+    if (typeof gameOveSound !== 'undefined') {
+      gameOveSound.currentTime = 0;
+      gameOveSound.play();
+    }
+    
+    // Crear overlay para "Game Over"
+    const overlay = document.createElement('div');
+    overlay.id = 'game-over-overlay';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.justifyContent = 'center';
+    overlay.style.alignItems = 'center';
+    overlay.style.zIndex = 9999;
+
+    // Mensaje "Game Over" con letras en rojo
+    const message = document.createElement('div');
+    message.textContent = '¡Game Over!';
+    message.style.color = 'red';
+    message.style.fontSize = '48px';
+    message.style.marginBottom = '20px';
+    overlay.appendChild(message);
+
+    // Botón "Reiniciar"
+    const restartButton = document.createElement('button');
+    restartButton.textContent = 'Reiniciar';
+    restartButton.style.padding = '10px 20px';
+    restartButton.style.fontSize = '24px';
+    restartButton.style.cursor = 'pointer';
+    restartButton.addEventListener('click', function() {
+      // Detener el sonido de Game Over para evitar solapes
+      if (typeof gameOveSound !== 'undefined') {
+        gameOveSound.pause();
+        gameOveSound.currentTime = 0;
+      }
+      // Eliminar el overlay, restablecer la vida y reiniciar el juego desde el primer mapa
+      document.body.removeChild(overlay);
+      playerLife = 100;
+      window.initMap(0);
+    });
+    overlay.appendChild(restartButton);
+
+    // Añadir el overlay al body y detener la ejecución de update()
+    document.body.appendChild(overlay);
     return;
   }
 
