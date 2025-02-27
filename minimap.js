@@ -19,10 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const isWall = (window.map && window.map[y][x] === 1);
         minimapCtx.fillStyle = isWall ? "#555" : "#ccc"; // pared vs pasillo
         minimapCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-
-        // Bordes en negro
-        minimapCtx.strokeStyle = "#000";
-        minimapCtx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
       }
     }
 
@@ -42,8 +38,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const arrowTipX = playerX + Math.cos(angle) * (playerRadius + arrowLength);
     const arrowTipY = playerY + Math.sin(angle) * (playerRadius + arrowLength);
 
-    minimapCtx.strokeStyle = "orange";
-    minimapCtx.fillStyle = "orange";
+    minimapCtx.strokeStyle = "green";
+    minimapCtx.fillStyle = "green";
     minimapCtx.lineWidth = 2;
 
     // Dibujar la línea de la flecha
